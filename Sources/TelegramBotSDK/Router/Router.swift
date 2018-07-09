@@ -21,6 +21,8 @@ public class Router {
 
 	public var bot: TelegramBot
 
+    var paths = [Path]()
+
 	public lazy var partialMatch: Handler? = { context in
 		context.respondAsync("❗ Part of your input was ignored: \(context.args.scanRestOfString())")
 		return true
@@ -194,6 +196,4 @@ public class Router {
 		
 		return true
 	}
-	
-	var paths = [Path]()
 }
