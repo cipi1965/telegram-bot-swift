@@ -19,9 +19,7 @@ class OverviewGenerator: CodeGenerator {
         self.context = Context(directory: directory)
     }
     
-    func start() throws {
-        
-    }
+    func start() throws { }
     
     func beforeGeneratingTypes() throws {
         context.outTypes.append("TYPES:\n\n")

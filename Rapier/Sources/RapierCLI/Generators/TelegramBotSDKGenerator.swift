@@ -86,6 +86,7 @@ class TelegramBotSDKGenerator: CodeGenerator {
 
         import Foundation
         import Dispatch
+        import TelegramBotSDKRequestProvider
 
         public extension TelegramBot {
 
@@ -127,7 +128,7 @@ class TelegramBotSDKGenerator: CodeGenerator {
         }
         
         let method = """
-            typealias \(completionName) = (_ result: \(resultSwiftType), _ error: DataTaskError?) -> ()
+            typealias \(completionName) = (_ result: \(resultSwiftType), _ error: RequestError?) -> ()
         
             @discardableResult
             func \(name)Sync(

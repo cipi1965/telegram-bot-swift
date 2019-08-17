@@ -6,5 +6,6 @@
 //
 
 import Foundation
+import TelegramBotSDKRequestProvider
 
-internal typealias DataTaskCompletion = (_ json: JSON, _ error: DataTaskError?)->()
+internal typealias DataTaskCompletion = (_ json: JSON, _ error: RequestError?)->()

@@ -23,7 +23,7 @@ extension TelegramBot {
 		let sem = DispatchSemaphore(value: 0)
 		let queue = DispatchQueue.global()
 		requestAsync(endpoint, parameters, queue: queue) {
-			(result: Result?, error: DataTaskError?) in
+			(result: Result?, error: RequestError?) in
 			retval = result
 			self.lastError = error
 			sem.signal()
@@ -46,7 +46,7 @@ extension TelegramBot {
 		let sem = DispatchSemaphore(value: 0)
 		let queue = DispatchQueue.global()
 		requestAsync(endpoint, parameters, queue: queue) {
-			(result: [Result]?, error: DataTaskError?) in
+			(result: [Result]?, error: RequestError?) in
 			retval = result
 			self.lastError = error
 			sem.signal()
@@ -86,7 +86,7 @@ extension TelegramBot {
 	
 	/// Perform asynchronous request.
 	/// - Returns: JsonConvertible on success. Nil on error, in which case `error` contains the details.
-	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?]?..., queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: Result?, _ error: DataTaskError?) -> ())?) where Result: JsonConvertible {
+	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?]?..., queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: Result?, _ error: RequestError?) -> ())?) where Result: JsonConvertible {
 		requestAsync(endpoint, mergeParameters(parameters), queue: queue, completion: completion)
 	}
 	
@@ -118,7 +118,7 @@ extension TelegramBot {
 	
 	/// Perform asynchronous request.
 	/// - Returns: array of JsonConvertibles on success. Nil on error, in which case `error` contains the details.
-	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?]?..., queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: [Result]?, _ error: DataTaskError?) -> ())?) where Result: JsonConvertible {
+	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?]?..., queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: [Result]?, _ error: RequestError?) -> ())?) where Result: JsonConvertible {
 		return requestAsync(endpoint, mergeParameters(parameters), queue: queue, completion: completion)
 	}
 	

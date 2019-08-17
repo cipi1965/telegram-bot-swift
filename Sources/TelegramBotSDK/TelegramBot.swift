@@ -52,7 +52,7 @@ public class TelegramBot {
     public var queue = DispatchQueue.main
     
     /// Last error for use with synchronous requests.
-    public var lastError: DataTaskError?
+    public var lastError: RequestError?
     
     /// Logging function. Defaults to `print`.
     public var logger: (_ text: String) -> () = { print($0) }
@@ -198,87 +198,6 @@ public class TelegramBot {
         }
         
         requestWrapper.doRequest(endpointUrl: endpointUrl, contentType: contentType, requestData: requestData, completion: completion)
-    }
-    
-    /// Note: performed on global queue
-    private func curlPerformRequest(endpointUrl: URL, contentType: String, requestBytes: UnsafePointer<UInt8>, byteCount: Int, completion: @escaping DataTaskCompletion) {
-        var callbackData = WriteCallbackData()
-        
-        guard let curl = curl_easy_init() else {
-            completion(nil, .libcurlInitError)
-            return
-        }
-        defer { curl_easy_cleanup(curl) }
-        
-        curl_easy_setopt_string(curl, CURLOPT_URL, endpointUrl.absoluteString)
-        //curl_easy_setopt_int(curl, CURLOPT_SAFE_UPLOAD, 1)
-        curl_easy_setopt_int(curl, CURLOPT_POST, 1)
-        curl_easy_setopt_binary(curl, CURLOPT_POSTFIELDS, requestBytes)
-        curl_easy_setopt_int(curl, CURLOPT_POSTFIELDSIZE, Int32(byteCount))
-        
-        var headers: UnsafeMutablePointer<curl_slist>? = nil
-        headers = curl_slist_append(headers, "Content-Type: \(contentType)")
-        curl_easy_setopt_slist(curl, CURLOPT_HTTPHEADER, headers)
-        defer { curl_slist_free_all(headers) }
-        
-        let writeFunction: curl_write_callback = { (ptr, size, nmemb, userdata) -> Int in
-            let count = size * nmemb
-            if let writeCallbackDataPointer = userdata?.assumingMemoryBound(to: WriteCallbackData.self) {
-                let writeCallbackData = writeCallbackDataPointer.pointee
-                ptr?.withMemoryRebound(to: UInt8.self, capacity: count) {
-                    writeCallbackData.data.append(&$0.pointee, count: count)
-                }
-            }
-            return count
-        }
-        curl_easy_setopt_write_function(curl, CURLOPT_WRITEFUNCTION, writeFunction)
-        curl_easy_setopt_pointer(curl, CURLOPT_WRITEDATA, &callbackData)
-        //curl_easy_setopt_int(curl, CURLOPT_VERBOSE, 1)
-        let code = curl_easy_perform(curl)
-        guard code == CURLE_OK else {
-            reportCurlError(code: code, completion: completion)
-            return
-        }
-        
-        //let result = String(data: callbackData.data, encoding: .utf8)
-        //print("CURLcode=\(code.rawValue) result=\(result.unwrapOptional)")
-        
-        guard code != CURLE_ABORTED_BY_CALLBACK else {
-            completion(nil, .libcurlAbortedByCallback)
-            return
-        }
-        
-        var httpCode: Int = 0
-        guard CURLE_OK == curl_easy_getinfo_long(curl, CURLINFO_RESPONSE_CODE, &httpCode) else {
-            reportCurlError(code: code, completion: completion)
-            return
-        }
-        let data = callbackData.data
-        let json = JSON(data: data)
-        let telegramResponse = Response(internalJson: json)
-        
-        guard httpCode == 200 else {
-            completion(nil, .invalidStatusCode(statusCode: httpCode, telegramResponse: telegramResponse, data: data))
-            return
-        }
-        
-        guard !data.isEmpty else {
-            completion(nil, .noDataReceived)
-            return
-        }
-        
-        if !telegramResponse.ok {
-            completion(nil, .serverError(telegramResponse: telegramResponse, data: data))
-            return
-        }
-        
-        completion(telegramResponse.result, nil)
-    }
-    
-    private func reportCurlError(code: CURLcode, completion: @escaping DataTaskCompletion) {
-        let failReason = String(cString: curl_easy_strerror(code), encoding: .utf8) ?? "unknown error"
-        //print("Request failed: \(failReason)")
-        completion(nil, .libcurlError(code: code, description: failReason))
     }
     
     private func urlForEndpoint(_ endpoint: String) -> URL {

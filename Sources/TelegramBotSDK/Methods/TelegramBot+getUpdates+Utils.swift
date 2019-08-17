@@ -29,7 +29,8 @@ extension TelegramBot {
                 updates = getUpdatesSync(limit: defaultUpdatesLimit, offset: nextOffset, timeout: defaultUpdatesTimeout)
                 if updates == nil {
                     // Retry on temporary problems
-                    if autoReconnect,
+                    // FIXME
+                    /*if autoReconnect,
                         let error = lastError,
                         case .libcurlError(let code, _) = error
                     {
@@ -47,7 +48,7 @@ extension TelegramBot {
                         default:
                             break
                         }
-                    }
+                    }*/
                     // Unrecoverable error, report to caller
                     return nil
                 }
