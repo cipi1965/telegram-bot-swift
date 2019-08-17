@@ -12,6 +12,7 @@
 
 import Foundation
 import Dispatch
+import TelegramBotSDKRequestProvider
 
 extension TelegramBot {
 	/// Perform synchronous request.
@@ -62,10 +63,17 @@ extension TelegramBot {
 	
 	/// Perform asynchronous request.
 	/// - Returns: JsonConvertible on success. Nil on error, in which case `error` contains the details.
-	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?] = [:], queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: Result?, _ error: DataTaskError?) -> ())?) where Result: JsonConvertible {
+	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?] = [:], queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: Result?, _ error: RequestError?) -> ())?) where Result: JsonConvertible {
 		
 		startDataTaskForEndpoint(endpoint, parameters: parameters) {
-			json, error in
+			data, error in
+            guard let data = data else {
+                completion?(nil, error)
+                return
+            }
+            let json = JSON(data: data)
+            let telegramResponse = Response(internalJson: json)
+            
 			var result: Result?
 			if error == nil {
 				result = Result(json: json.object)
@@ -84,10 +92,16 @@ extension TelegramBot {
 	
 	/// Perform asynchronous request.
 	/// - Returns: array of JsonConvertibles on success. Nil on error, in which case `error` contains the details.
-	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?] = [:], queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: [Result]?, _ error: DataTaskError?) -> ())?) where Result: JsonConvertible {
+	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?] = [:], queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: [Result]?, _ error: RequestError?) -> ())?) where Result: JsonConvertible {
 		
 		startDataTaskForEndpoint(endpoint, parameters: parameters) {
-			json, error in
+			data, error in
+            guard let data = data else {
+                completion?(nil, error)
+                return
+            }
+            let json = JSON(data: data)
+            
 			var resultArray = [Result]()
 			if error == nil {
 				resultArray.reserveCapacity(json.count)

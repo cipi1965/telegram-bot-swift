@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "TelegramBotSDKCurl",
+        "repositoryURL": "https://github.com/rapierorg/telegram-bot-swift-curl.git",
+        "state": {
+          "branch": "master",
+          "revision": "459d1ad6b4b4f16de03bdda4c765f271342fb656",
+          "version": null
+        }
+      },
+      {
+        "package": "TelegramBotSDKRequestProvider",
+        "repositoryURL": "https://github.com/rapierorg/telegram-bot-swift-requestprovider.git",
+        "state": {
+          "branch": null,
+          "revision": "95623c6d8930e21469b6846132d220c25d46f24e",
+          "version": "0.3.3"
+        }
+      }
+    ]
+  },
+  "version": 1
+}

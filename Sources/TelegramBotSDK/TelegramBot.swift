@@ -12,11 +12,12 @@
 
 import Foundation
 import Dispatch
+import TelegramBotSDKRequestProvider
+import TelegramBotSDKCurl
 
 import CCurl
 
 public class TelegramBot {
-    internal typealias DataTaskCompletion = (_ json: JSON, _ error: DataTaskError?)->()
 
 	public typealias RequestParameters = [String: Any?]
 	
@@ -55,6 +56,9 @@ public class TelegramBot {
     
     /// Logging function. Defaults to `print`.
     public var logger: (_ text: String) -> () = { print($0) }
+    
+    /// Request wrapper. Defaults to Curl for now
+    public var requestWrapper: RequestProvider.Type = CurlRequestProvider.self
     
     /// Defines reconnect delay in seconds when requesting updates. Can be overridden.
     ///
@@ -148,13 +152,13 @@ public class TelegramBot {
     
     /// Initiates a request to the server. Used for implementing
     /// specific requests (getMe, getStatus etc).
-    internal func startDataTaskForEndpoint(_ endpoint: String, completion: @escaping DataTaskCompletion) {
+    internal func startDataTaskForEndpoint(_ endpoint: String, completion: @escaping RequestCompletion) {
         startDataTaskForEndpoint(endpoint, parameters: [:], completion: completion)
     }
     
     /// Initiates a request to the server. Used for implementing
     /// specific requests.
-    internal func startDataTaskForEndpoint(_ endpoint: String, parameters: [String: Any?], completion: @escaping DataTaskCompletion) {
+    internal func startDataTaskForEndpoint(_ endpoint: String, parameters: [String: Any?], completion: @escaping RequestCompletion) {
         let endpointUrl = urlForEndpoint(endpoint)
         
         // If parameters contain values of type InputFile, use  multipart/form-data for sending them.
@@ -187,20 +191,13 @@ public class TelegramBot {
             requestDataOrNil = encoded.data(using: .utf8)
             logger("endpoint: \(endpoint), data: \(encoded)")
         }
-        requestDataOrNil?.append(0)
-
+        
         guard let requestData = requestDataOrNil else {
-            completion(nil, .invalidRequest)
+            completion(nil, nil)
             return
         }
-        // -1 for '\0'
-        let byteCount = requestData.count - 1
         
-        DispatchQueue.global().async {
-            requestData.withUnsafeBytes { (bytes: UnsafePointer<UInt8>)->Void in
-                self.curlPerformRequest(endpointUrl: endpointUrl, contentType: contentType, requestBytes: bytes, byteCount: byteCount, completion: completion)
-            }
-        }
+        requestWrapper.doRequest(endpointUrl: endpointUrl, contentType: contentType, requestData: requestData, completion: completion)
     }
     
     /// Note: performed on global queue
