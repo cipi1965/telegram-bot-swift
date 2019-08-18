@@ -152,13 +152,13 @@ public class TelegramBot {
     
     /// Initiates a request to the server. Used for implementing
     /// specific requests (getMe, getStatus etc).
-    internal func startDataTaskForEndpoint(_ endpoint: String, completion: @escaping RequestCompletion) {
+    internal func startDataTaskForEndpoint(_ endpoint: String, completion: @escaping DataTaskCompletion) {
         startDataTaskForEndpoint(endpoint, parameters: [:], completion: completion)
     }
     
     /// Initiates a request to the server. Used for implementing
     /// specific requests.
-    internal func startDataTaskForEndpoint(_ endpoint: String, parameters: [String: Any?], completion: @escaping RequestCompletion) {
+    internal func startDataTaskForEndpoint(_ endpoint: String, parameters: [String: Any?], completion: @escaping DataTaskCompletion) {
         let endpointUrl = urlForEndpoint(endpoint)
         
         // If parameters contain values of type InputFile, use  multipart/form-data for sending them.
@@ -197,7 +197,22 @@ public class TelegramBot {
             return
         }
         
-        requestWrapper.doRequest(endpointUrl: endpointUrl, contentType: contentType, requestData: requestData, completion: completion)
+        requestWrapper.doRequest(endpointUrl: endpointUrl, contentType: contentType, requestData: requestData, completion: { (data, error) in
+            guard let data = data else {
+                completion(nil, error)
+                return
+            }
+            
+            let json = JSON(data: data)
+            let telegramResponse = Response(internalJson: json)
+            
+            guard telegramResponse.ok else {
+                completion(nil, .serverError(data: data))
+                return
+            }
+            
+            completion(json["result"], error)
+        })
     }
     
     private func urlForEndpoint(_ endpoint: String) -> URL {

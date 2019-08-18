@@ -66,13 +66,7 @@ extension TelegramBot {
 	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?] = [:], queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: Result?, _ error: RequestError?) -> ())?) where Result: JsonConvertible {
 		
 		startDataTaskForEndpoint(endpoint, parameters: parameters) {
-			data, error in
-            guard let data = data else {
-                completion?(nil, error)
-                return
-            }
-            let json = JSON(data: data)
-            let telegramResponse = Response(internalJson: json)
+			json, error in
             
 			var result: Result?
 			if error == nil {
@@ -95,12 +89,7 @@ extension TelegramBot {
 	internal func requestAsync<Result>(_ endpoint: String, _ parameters: [String: Any?] = [:], queue: DispatchQueue = DispatchQueue.main, completion: ((_ result: [Result]?, _ error: RequestError?) -> ())?) where Result: JsonConvertible {
 		
 		startDataTaskForEndpoint(endpoint, parameters: parameters) {
-			data, error in
-            guard let data = data else {
-                completion?(nil, error)
-                return
-            }
-            let json = JSON(data: data)
+			json, error in
             
 			var resultArray = [Result]()
 			if error == nil {
