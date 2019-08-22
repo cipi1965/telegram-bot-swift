@@ -126,9 +126,12 @@ class TelegramBotSDKGenerator: CodeGenerator {
             arrayFieldsString = ":"
         }
         
+        let documentation = (info.documentation ?? "").replacingOccurrences(of: "\n", with: "\n    ")
+        
         let method = """
             typealias \(completionName) = (_ result: \(resultSwiftType), _ error: DataTaskError?) -> ()
         
+            \(documentation)
             @discardableResult
             func \(name)Sync(
                     \(fieldsString)
@@ -137,6 +140,7 @@ class TelegramBotSDKGenerator: CodeGenerator {
                     \(arrayFieldsString)])
             }
 
+            \(documentation)
             func \(name)Async(
                     \(fieldsString)
                     _ parameters: [String: Any?] = [:],

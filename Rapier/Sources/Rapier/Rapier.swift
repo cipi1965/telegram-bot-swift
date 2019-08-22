@@ -75,11 +75,19 @@ open class Rapier {
         let resultField = parseType(field: result)
         
         guard let fieldsDictionary = props["parameters"]?.dictionary else {
-            methods[methodName] = MethodInfo(parameters: [:], result: resultField)
+            methods[methodName] = MethodInfo(
+                parameters: [:],
+                result: resultField,
+                documentation: props["documentation"]?.string
+            )
             return
         }
         let fields = try parseFields(fieldsDictionary, parent: methodName)
-        let methodInfo = MethodInfo(parameters: fields, result: resultField)
+        let methodInfo = MethodInfo(
+            parameters: fields,
+            result: resultField,
+            documentation: props["documentation"]?.string
+        )
         methods[methodName] = methodInfo
     }
     
