@@ -15,7 +15,8 @@ import Dispatch
 
 public class Context {
 	typealias T = Context
-		
+    
+    private let router: Router
 	public let bot: TelegramBot
 	public let update: Update
 	/// `update.message` shortcut. Make sure that the message exists before using it,
@@ -44,8 +45,24 @@ public class Context {
             update.callbackQuery?.from.id)
     }
     public var properties: [String: AnyObject]
+    
+    public var isInConversation: Bool {
+        guard let chatId = chatId else { return false }
+        return router.isChatInConversation(chatId)
+    }
+    
+    public func endConversation() {
+        guard let chatId = chatId else { return }
+        router.endConversationForChatId(chatId)
+    }
+    
+    public func startConversation(_ name: String) {
+        guard let chatId = chatId else { return }
+        router.startConversationForChatId(chatId, conversationName: name)
+    }
 	
-    init(bot: TelegramBot, update: Update, scanner: Scanner, command: String, startsWithSlash: Bool, properties: [String: AnyObject] = [:]) {
+    init(router: Router, bot: TelegramBot, update: Update, scanner: Scanner, command: String, startsWithSlash: Bool, properties: [String: AnyObject] = [:]) {
+        self.router = router
 		self.bot = bot
 		self.update = update
         self.slash = startsWithSlash

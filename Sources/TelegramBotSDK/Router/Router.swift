@@ -79,6 +79,12 @@ public class Router {
         scanner.charactersToBeSkipped = charactersToBeSkipped
 		let originalScanLocation = scanner.scanLocation
 		
+        if let chatId = update.message?.chat.id {
+            if isChatInConversation(chatId) {
+                conversationsPerChat[chatId]?.handleUpdate(update: update, properties: properties)
+            }
+        }
+        
 		for path in paths {
 			var command = ""
             var startsWithSlash = false
@@ -87,7 +93,7 @@ public class Router {
 				continue;
 			}
 			
-            let context = Context(bot: bot, update: update, scanner: scanner, command: command, startsWithSlash: startsWithSlash, properties: properties)
+            let context = Context(router: self, bot: bot, update: update, scanner: scanner, command: command, startsWithSlash: startsWithSlash, properties: properties)
 			let handler = path.handler
 
 			if try handler(context) {
@@ -100,12 +106,12 @@ public class Router {
 
 		if update.message != nil && !string.isEmpty {
 			if let unmatched = unmatched {
-                let context = Context(bot: bot, update: update, scanner: scanner, command: "", startsWithSlash: false, properties: properties)
+                let context = Context(router: self, bot: bot, update: update, scanner: scanner, command: "", startsWithSlash: false, properties: properties)
 				return try unmatched(context)
 			}
 		} else {
 			if let unsupportedContentType = unsupportedContentType {
-				let context = Context(bot: bot, update: update, scanner: scanner, command: "", startsWithSlash: false, properties: properties)
+                let context = Context(router: self, bot: bot, update: update, scanner: scanner, command: "", startsWithSlash: false, properties: properties)
 				return try unsupportedContentType(context)
 			}
 		}
@@ -176,10 +182,10 @@ public class Router {
             case .editedReplyToMessage: return message.replyToMessage != nil
             case .editedEditDate: return message.editDate != nil
             case .editedText: return message.text != nil
-            case .editedEntities: return !message.entities.isEmpty
+            case .editedEntities: return !(message.entities ?? []).isEmpty
             case .editedAudio: return message.audio != nil
             case .editedDocument: return message.document != nil
-            case .editedPhoto: return !message.photo.isEmpty
+            case .editedPhoto: return !(message.photo ?? []).isEmpty
             case .editedSticker: return message.sticker != nil
             case .editedVideo: return message.video != nil
             case .editedVoice: return message.voice != nil
@@ -216,6 +222,34 @@ public class Router {
 		
 		return true
 	}
+    
+    public func addConversation(_ conversation: Conversation.Type) {
+        guard conversations.index(forKey: conversation.name) == nil else {
+            fatalError("You can't add a Conversation with the same name of another")
+        }
+        conversations[conversation.name] = conversation
+    }
+    
+    public func startConversationForChatId(_ chatId: Int64, conversationName: String) {
+        if (!isChatInConversation(chatId)) {
+            let conversationType = conversations[conversationName]!
+            let newConversation = conversationType.init(chatId: chatId, bot: bot, router: self)
+            conversationsPerChat[chatId] = newConversation
+            newConversation.start()
+        }
+    }
+    
+    public func endConversationForChatId(_ chatId: Int64) {
+        if (isChatInConversation(chatId)) {
+            conversationsPerChat.removeValue(forKey: chatId)
+        }
+    }
+    
+    public func isChatInConversation(_ chatId: Int64) -> Bool {
+        return conversationsPerChat.index(forKey: chatId) != nil
+    }
 	
 	var paths = [Path]()
+    var conversations = [String: Conversation.Type]()
+    var conversationsPerChat = [Int64: Conversation]()
 }
